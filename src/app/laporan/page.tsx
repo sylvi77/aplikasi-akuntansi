@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   FileText,
   Loader2,
@@ -346,7 +346,7 @@ export default function LaporanPage() {
   const [report, setReport] = useState<FinancialReportData | null>(null);
   const [error, setError] = useState("");
 
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -364,7 +364,11 @@ export default function LaporanPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mode, bulan, tahun]);
+
+  useEffect(() => {
+    handleGenerate();
+  }, [handleGenerate]);
 
   const handlePrint = () => {
     window.print();
@@ -445,14 +449,15 @@ export default function LaporanPage() {
             </select>
           </div>
 
-          <button
-            onClick={handleGenerate}
-            disabled={loading}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
-            {loading ? "Memproses..." : "Generate Laporan"}
-          </button>
+          <div className="flex items-center ml-2 mb-1.5">
+            {loading ? (
+              <span className="flex items-center gap-2 text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1.5 rounded-full">
+                <Loader2 size={14} className="animate-spin" /> Memperbarui...
+              </span>
+            ) : (
+              <span className="text-sm text-slate-400">Pilih periode untuk otomatis melihat laporan.</span>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -511,12 +516,11 @@ export default function LaporanPage() {
         </div>
       )}
 
-      {/* Empty state */}
-      {!report && !loading && (
+      {/* Loading state (initial) */}
+      {!report && loading && (
         <div className="flex flex-col items-center justify-center py-24 text-slate-400 gap-3">
-          <FileText size={48} strokeWidth={1.2} />
-          <p className="text-base font-medium">Pilih periode dan klik &quot;Generate Laporan&quot;</p>
-          <p className="text-sm">Laporan akan mencakup Trial Balance, Income Statement, Balance Sheet, Cash Flow &amp; Equity</p>
+          <Loader2 size={48} strokeWidth={1.2} className="animate-spin text-blue-500" />
+          <p className="text-base font-medium">Memuat laporan keuangan otomatis...</p>
         </div>
       )}
     </div>
