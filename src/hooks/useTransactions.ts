@@ -20,7 +20,7 @@ export function useTransactions() {
       setLoading(true);
       const res = await fetch('/api/transactions');
       const json = await res.json();
-      
+
       if (json.success) {
         setData(json.data);
         setError(null);
@@ -38,6 +38,8 @@ export function useTransactions() {
     fetchTransactions();
   }, [fetchTransactions]);
 
+  // ─── Mutations use optimistic updates — no full re-fetch needed ───────────
+
   const addTransaction = async (transactionData: Omit<Transaksi, 'id' | 'createdAt'>) => {
     const res = await fetch('/api/transactions', {
       method: 'POST',
@@ -46,13 +48,17 @@ export function useTransactions() {
     });
     const json = await res.json();
     if (json.success) {
-      await fetchTransactions(); // refresh data
+      // Prepend the new row so it appears at the top immediately.
+      setData((prev) => [json.data, ...prev]);
       return true;
     }
     throw new Error(json.message);
   };
 
-  const updateTransaction = async (id: string, transactionData: Partial<Omit<Transaksi, 'id' | 'createdAt'>>) => {
+  const updateTransaction = async (
+    id: string,
+    transactionData: Partial<Omit<Transaksi, 'id' | 'createdAt'>>
+  ) => {
     const res = await fetch(`/api/transactions/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -60,7 +66,10 @@ export function useTransactions() {
     });
     const json = await res.json();
     if (json.success) {
-      await fetchTransactions(); // refresh data
+      // Patch the matching row in local state — no round-trip needed.
+      setData((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, ...transactionData } : t))
+      );
       return true;
     }
     throw new Error(json.message);
@@ -72,7 +81,8 @@ export function useTransactions() {
     });
     const json = await res.json();
     if (json.success) {
-      await fetchTransactions(); // refresh data
+      // Remove the row from local state immediately.
+      setData((prev) => prev.filter((t) => t.id !== id));
       return true;
     }
     throw new Error(json.message);
@@ -85,6 +95,6 @@ export function useTransactions() {
     refetch: fetchTransactions,
     addTransaction,
     updateTransaction,
-    deleteTransaction
+    deleteTransaction,
   };
 }

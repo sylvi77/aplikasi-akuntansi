@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-export const dynamic = 'force-dynamic';
+// No force-dynamic — GET is cacheable (s-maxage=60 below).
 
 export async function GET(request: Request) {
   try {

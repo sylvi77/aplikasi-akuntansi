@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from 'react';
-import { useTransactions } from '@/hooks/useTransactions';
 import { Save, Loader2, CheckCircle2 } from 'lucide-react';
 
+// This page only needs to POST a new transaction.
+// We intentionally do NOT use useTransactions() here because that hook
+// fires a GET fetch of all transactions on mount — wasteful for a write-only form.
+
+const KATEGORI = ['Makanan', 'Transportasi', 'Tagihan', 'Belanja', 'Gaji', 'Lainnya'];
+
 export default function TambahTransaksi() {
-  const { addTransaction } = useTransactions();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -15,14 +19,12 @@ export default function TambahTransaksi() {
     deskripsi: '',
     tipe: 'Pengeluaran',
     jumlah: '',
-    kategori: 'Makanan'
+    kategori: 'Makanan',
   });
-
-  const KATEGORI = ['Makanan', 'Transportasi', 'Tagihan', 'Belanja', 'Gaji', 'Lainnya'];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,17 +38,24 @@ export default function TambahTransaksi() {
         throw new Error('Mohon lengkapi semua field yang diwajibkan');
       }
 
-      await addTransaction({
-        tanggal: formData.tanggal,
-        deskripsi: formData.deskripsi,
-        tipe: formData.tipe as 'Pemasukan' | 'Pengeluaran',
-        jumlah: parseFloat(formData.jumlah),
-        kategori: formData.kategori
+      // Direct POST — no hook, no unnecessary GET on mount.
+      const res = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tanggal: formData.tanggal,
+          deskripsi: formData.deskripsi,
+          tipe: formData.tipe,
+          jumlah: parseFloat(formData.jumlah),
+          kategori: formData.kategori,
+        }),
       });
 
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message);
+
       setSuccess(true);
-      setFormData(prev => ({ ...prev, deskripsi: '', jumlah: '' })); // Reset some fields
-      
+      setFormData((prev) => ({ ...prev, deskripsi: '', jumlah: '' }));
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       setError(err.message);
@@ -58,14 +67,14 @@ export default function TambahTransaksi() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-slate-800">Tambah Transaksi</h1>
-      
+
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
         {error && (
           <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 border border-red-100">
             {error}
           </div>
         )}
-        
+
         {success && (
           <div className="bg-green-50 text-green-600 p-4 rounded-lg mb-6 border border-green-100 flex items-center gap-2">
             <CheckCircle2 size={20} />
@@ -77,8 +86,8 @@ export default function TambahTransaksi() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-slate-700">Tanggal</label>
-              <input 
-                type="date" 
+              <input
+                type="date"
                 name="tanggal"
                 value={formData.tanggal}
                 onChange={handleChange}
@@ -86,10 +95,10 @@ export default function TambahTransaksi() {
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="block text-sm font-medium text-slate-700">Tipe Transaksi</label>
-              <select 
+              <select
                 name="tipe"
                 value={formData.tipe}
                 onChange={handleChange}
@@ -103,8 +112,8 @@ export default function TambahTransaksi() {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700">Deskripsi</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="deskripsi"
               value={formData.deskripsi}
               onChange={handleChange}
@@ -119,8 +128,8 @@ export default function TambahTransaksi() {
               <label className="block text-sm font-medium text-slate-700">Jumlah (Rp)</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500">Rp</span>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   name="jumlah"
                   value={formData.jumlah}
                   onChange={handleChange}
@@ -132,16 +141,16 @@ export default function TambahTransaksi() {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <label className="block text-sm font-medium text-slate-700">Kategori</label>
-              <select 
+              <select
                 name="kategori"
                 value={formData.kategori}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               >
-                {KATEGORI.map(kat => (
+                {KATEGORI.map((kat) => (
                   <option key={kat} value={kat}>{kat}</option>
                 ))}
               </select>
@@ -149,8 +158,8 @@ export default function TambahTransaksi() {
           </div>
 
           <div className="pt-4">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:bg-blue-400"
             >

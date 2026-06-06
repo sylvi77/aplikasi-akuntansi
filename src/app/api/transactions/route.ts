@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-export const dynamic = 'force-dynamic';
+// Remove force-dynamic so the Cache-Control header below is honoured by the CDN.
+// Mutations (POST) always bypass cache automatically.
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const { data, error } = await supabase
       .from('transaksi')
-      .select('*')
-      .order('tanggal', { ascending: false });
+      .select('id, tanggal, deskripsi, tipe, jumlah, kategori, createdAt')
+      .order('tanggal', { ascending: false })
+      .limit(200); // safety cap — prevents huge payloads as data grows
 
     if (error) throw error;
 
@@ -25,7 +27,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     const { data, error } = await supabase
       .from('transaksi')
       .insert([
@@ -34,10 +36,10 @@ export async function POST(request: Request) {
           deskripsi: body.deskripsi,
           tipe: body.tipe,
           jumlah: body.jumlah,
-          kategori: body.kategori
-        }
+          kategori: body.kategori,
+        },
       ])
-      .select()
+      .select('id, tanggal, deskripsi, tipe, jumlah, kategori, createdAt')
       .single();
 
     if (error) throw error;
@@ -48,3 +50,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
+
