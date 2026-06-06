@@ -12,7 +12,9 @@ let _client: SupabaseClient | null = null;
 
 export function getSupabase(): SupabaseClient {
   if (!_client) {
-    _client = createClient(supabaseUrl, supabaseKey, {
+    const url = supabaseUrl || 'https://placeholder.supabase.co';
+    const key = supabaseKey || 'placeholder-key';
+    _client = createClient(url, key, {
       auth: { persistSession: false }, // server-side: no session persistence needed
     });
   }
