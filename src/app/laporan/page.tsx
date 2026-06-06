@@ -338,7 +338,7 @@ function EquityPanel({ data }: { data: FinancialReportData }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function LaporanPage() {
-  const [mode, setMode] = useState<"bulanan" | "tahunan">("bulanan");
+  const [mode, setMode] = useState<"bulanan" | "tahunan">("tahunan");
   const [bulan, setBulan] = useState(new Date().getMonth() + 1);
   const [tahun, setTahun] = useState(new Date().getFullYear());
   const [activeTab, setActiveTab] = useState<Tab>("trial");

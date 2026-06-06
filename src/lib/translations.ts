@@ -1,0 +1,58 @@
+export const translations = {
+  id: {
+    dashboard: "Dashboard",
+    add_transaction: "Tambah Transaksi",
+    all_transactions: "Semua Transaksi",
+    ai_assistant: "AI Assistant",
+    budget: "Budget",
+    financial_report: "Laporan Keuangan",
+    app_settings: "App Settings",
+  },
+  en: {
+    dashboard: "Dashboard",
+    add_transaction: "Add Transaction",
+    all_transactions: "All Transactions",
+    ai_assistant: "AI Assistant",
+    budget: "Budget",
+    financial_report: "Financial Report",
+    app_settings: "App Settings",
+  },
+  zh: {
+    dashboard: "仪表板",
+    add_transaction: "添加交易",
+    all_transactions: "所有交易",
+    ai_assistant: "AI助手",
+    budget: "预算",
+    financial_report: "财务报告",
+    app_settings: "应用设置",
+  },
+  pt: {
+    dashboard: "Painel",
+    add_transaction: "Adicionar Transação",
+    all_transactions: "Todas as Transações",
+    ai_assistant: "Assistente IA",
+    budget: "Orçamento",
+    financial_report: "Relatório Financeiro",
+    app_settings: "Configurações do App",
+  },
+  es: {
+    dashboard: "Panel",
+    add_transaction: "Añadir Transacción",
+    all_transactions: "Todas las Transacciones",
+    ai_assistant: "Asistente IA",
+    budget: "Presupuesto",
+    financial_report: "Informe Financiero",
+    app_settings: "Ajustes de la App",
+  },
+  ar: {
+    dashboard: "لوحة القيادة",
+    add_transaction: "إضافة معاملة",
+    all_transactions: "كل المعاملات",
+    ai_assistant: "مساعد الذكاء الاصطناعي",
+    budget: "الميزانية",
+    financial_report: "تقرير مالي",
+    app_settings: "إعدادات التطبيق",
+  },
+} as const;
+
+export type LanguageCode = keyof typeof translations;

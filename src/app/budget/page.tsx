@@ -61,9 +61,11 @@ export default function Pengaturan() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">Pengaturan Budget</h1>
-      <p className="text-slate-600">Tetapkan batas pengeluaran (budget) bulanan untuk setiap kategori.</p>
+    <div className="max-w-2xl">
+      <h1 className="text-2xl font-bold text-slate-800 mb-2">Budget</h1>
+      <p className="text-slate-500 mb-6">
+        Tetapkan batas pengeluaran (budget) bulanan untuk setiap kategori.
+      </p>
       
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
         {error && (
