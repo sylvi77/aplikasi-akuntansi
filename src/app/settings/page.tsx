@@ -1,8 +1,8 @@
 "use client";
 
 import { useSettings } from "@/lib/SettingsContext";
-import { Moon, Sun, Monitor, Image as ImageIcon, Languages, Palette } from "lucide-react";
-import { useState } from "react";
+import { Moon, Sun, Monitor, Image as ImageIcon, Languages, Palette, Upload } from "lucide-react";
+import { useState, useRef } from "react";
 
 const LANGUAGES = [
   { code: "id", name: "Indonesian (Bahasa Indonesia)" },
@@ -16,9 +16,55 @@ const LANGUAGES = [
 export default function AppSettingsPage() {
   const { theme, language, background, setTheme, setLanguage, setBackground } = useSettings();
   const [bgInput, setBgInput] = useState(background);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleBgSave = () => {
     setBackground(bgInput);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 1920;
+        const MAX_HEIGHT = 1080;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Kompres ke JPEG kualiatas 70% agar muat di localStorage
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        setBgInput(dataUrl);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   return (
@@ -82,22 +128,42 @@ export default function AppSettingsPage() {
             Ubah latar belakang halaman ini. Anda bisa memasukkan link gambar (URL) atau kode warna HEX (misal: <code className="bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">#e2e8f0</code>).
           </p>
           
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              <Upload size={18} />
+              Unggah Gambar
+            </button>
             <input
               type="text"
               value={bgInput}
               onChange={(e) => setBgInput(e.target.value)}
-              placeholder="Kosongkan untuk bawaan (default), atau isi URL gambar / kode warna"
+              placeholder="Atau isi URL gambar / kode warna (#e2e8f0)"
               className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
             />
             <button
               onClick={handleBgSave}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-semibold transition-colors flex items-center gap-2"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
             >
               <Palette size={18} />
               Terapkan
             </button>
           </div>
+          <button 
+            onClick={() => { setBgInput(""); setBackground(""); }}
+            className="mt-3 text-sm text-red-500 hover:text-red-600 font-medium"
+          >
+            Hapus Background
+          </button>
         </div>
 
         {/* Language Settings */}
