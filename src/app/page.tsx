@@ -5,10 +5,14 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useBudgets } from '@/hooks/useBudgets';
 import DashboardCharts from '@/components/DashboardCharts';
 import { ArrowUpRight, ArrowDownRight, Loader2, Sparkles, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import { useSettings } from '@/lib/SettingsContext';
+import { translations } from '@/lib/translations';
 
 export default function Dashboard() {
   const { data: transactions, loading, error } = useTransactions();
   const { data: budgets, loading: budgetsLoading } = useBudgets();
+  const { language } = useSettings();
+  const t = translations[language];
 
   const [analyzing, setAnalyzing] = useState(false);
   const [saran, setSaran] = useState<string[]>([]);
@@ -111,46 +115,46 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+    <div className="space-y-6 pb-12 transition-colors">
+      <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t.sidebar.dashboard}</h1>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between transition-colors">
           <div>
-            <p className="text-sm font-medium text-slate-500 mb-1">Total Pemasukan</p>
-            <h3 className="text-2xl font-bold text-green-600">{formatRupiah(totalPemasukan)}</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{t.dashboard.total_income}</p>
+            <h3 className="text-2xl font-bold text-green-600 dark:text-green-400">{formatRupiah(totalPemasukan)}</h3>
           </div>
-          <div className="h-12 w-12 bg-green-50 rounded-full flex items-center justify-center text-green-500">
+          <div className="h-12 w-12 bg-green-50 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-500 dark:text-green-400">
             <ArrowUpRight size={24} />
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between transition-colors">
           <div>
-            <p className="text-sm font-medium text-slate-500 mb-1">Total Pengeluaran</p>
-            <h3 className="text-2xl font-bold text-red-600">{formatRupiah(totalPengeluaran)}</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{t.dashboard.total_expense}</p>
+            <h3 className="text-2xl font-bold text-red-600 dark:text-red-400">{formatRupiah(totalPengeluaran)}</h3>
           </div>
-          <div className="h-12 w-12 bg-red-50 rounded-full flex items-center justify-center text-red-500">
+          <div className="h-12 w-12 bg-red-50 dark:bg-red-900/30 rounded-full flex items-center justify-center text-red-500 dark:text-red-400">
             <ArrowDownRight size={24} />
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center relative overflow-hidden group">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-center relative overflow-hidden group transition-colors">
           <div className="flex items-center justify-between z-10">
             <div>
-              <p className="text-sm font-medium text-slate-500 mb-1">Saldo Akhir</p>
-              <h3 className="text-2xl font-bold text-blue-600">{formatRupiah(saldoAkhir)}</h3>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{t.dashboard.remaining_balance}</p>
+              <h3 className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatRupiah(saldoAkhir)}</h3>
             </div>
-            <div className="h-12 w-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 cursor-pointer hover:bg-blue-100 transition-colors" onClick={handlePredict} title="Prediksi Saldo Bulan Depan">
+            <div className="h-12 w-12 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-500 dark:text-blue-400 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors" onClick={handlePredict} title={t.dashboard.prediction}>
               {predicting ? <Loader2 className="animate-spin" size={24} /> : <TrendingUp size={24} />}
             </div>
           </div>
 
           {prediksi && (
-            <div className="mt-4 pt-3 border-t border-slate-100 text-sm text-slate-700 bg-blue-50 p-3 rounded-xl z-10">
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl z-10">
               <div className="flex items-start gap-2">
-                <Sparkles size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                <Sparkles size={16} className="text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
                 <p>{prediksi}</p>
               </div>
             </div>
@@ -163,17 +167,17 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold flex items-center gap-2">
-              <Sparkles size={20} /> Analisis & Saran Penghematan AI
+              <Sparkles size={20} /> {t.dashboard.ai_analysis}
             </h3>
             <p className="text-blue-100 text-sm mt-1">Dapatkan saran spesifik berdasarkan pengeluaran Anda 30 hari terakhir.</p>
           </div>
           <button
             onClick={handleAnalyze}
             disabled={analyzing}
-            className="bg-white text-blue-600 font-medium px-5 py-2.5 rounded-xl hover:bg-blue-50 transition-colors flex items-center gap-2 whitespace-nowrap disabled:opacity-80"
+            className="bg-white text-blue-600 dark:bg-slate-800 dark:text-blue-400 font-medium px-5 py-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 whitespace-nowrap disabled:opacity-80"
           >
             {analyzing ? <Loader2 className="animate-spin" size={18} /> : <BotIcon />}
-            {analyzing ? 'Menganalisis...' : 'Dapatkan Saran'}
+            {analyzing ? t.dashboard.loading_ai : t.dashboard.ai_analysis}
           </button>
         </div>
 
@@ -193,8 +197,8 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Chart Section */}
-        <div className="xl:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-2">Statistik 7 Hari Terakhir</h3>
+        <div className="xl:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">{t.dashboard.summary}</h3>
           <DashboardCharts data={transactions} />
         </div>
 
@@ -203,9 +207,9 @@ export default function Dashboard() {
 
           {/* Budget Progress */}
           {budgets && budgets.length > 0 && budgets.some(b => b.jumlah > 0) && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                Pengingat Budget Bulan Ini
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                {t.budget.title}
               </h3>
               <div className="space-y-5">
                 {budgets.filter(b => b.jumlah > 0).map(b => {
@@ -243,27 +247,27 @@ export default function Dashboard() {
           )}
 
           {/* Recent Transactions */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Transaksi Terbaru</h3>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t.dashboard.recent_transactions}</h3>
             <div className="space-y-4">
-              {transactions.slice(0, 5).map((t, index) => (
-                <div key={t.id || index} className="flex items-center justify-between pb-4 border-b border-slate-50 last:border-0 last:pb-0">
+              {transactions.slice(0, 5).map((txn, index) => (
+                <div key={txn.id || index} className="flex items-center justify-between pb-4 border-b border-slate-50 dark:border-slate-700 last:border-0 last:pb-0">
                   <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${t.tipe === 'Pemasukan' ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500'}`}>
-                      {t.tipe === 'Pemasukan' ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${txn.tipe === 'Pemasukan' ? 'bg-green-50 dark:bg-green-900/30 text-green-500 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400'}`}>
+                      {txn.tipe === 'Pemasukan' ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
                     </div>
                     <div>
-                      <p className="font-medium text-slate-800">{t.deskripsi}</p>
-                      <p className="text-xs text-slate-500">{t.tanggal} • {t.kategori}</p>
+                      <p className="font-medium text-slate-800 dark:text-white">{txn.deskripsi}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{txn.tanggal} • {txn.kategori}</p>
                     </div>
                   </div>
-                  <div className={`font-semibold ${t.tipe === 'Pemasukan' ? 'text-green-600' : 'text-red-600'}`}>
-                    {t.tipe === 'Pemasukan' ? '+' : '-'}{formatRupiah(t.jumlah)}
+                  <div className={`font-semibold ${txn.tipe === 'Pemasukan' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {txn.tipe === 'Pemasukan' ? '+' : '-'}{formatRupiah(txn.jumlah)}
                   </div>
                 </div>
               ))}
               {transactions.length === 0 && (
-                <div className="text-center text-slate-500 text-sm py-4">Belum ada transaksi</div>
+                <div className="text-center text-slate-500 dark:text-slate-400 text-sm py-4">{t.dashboard.no_transactions}</div>
               )}
             </div>
           </div>

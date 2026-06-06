@@ -13,6 +13,8 @@ import {
   Landmark,
 } from "lucide-react";
 import type { FinancialReportData } from "@/app/api/financial-report/route";
+import { useSettings } from "@/lib/SettingsContext";
+import { translations } from "@/lib/translations";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n: number) =>
@@ -43,9 +45,9 @@ const TABS: { id: Tab; label: string; Icon: any }[] = [
 
 function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <div className="mb-6 pb-4 border-b-2 border-slate-200">
-      <h2 className="text-xl font-bold text-slate-800">{title}</h2>
-      <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>
+    <div className="mb-6 pb-4 border-b-2 border-slate-200 dark:border-slate-700">
+      <h2 className="text-xl font-bold text-slate-800 dark:text-white">{title}</h2>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>
     </div>
   );
 }
@@ -70,14 +72,14 @@ function TableRow({
     : "text-red-600";
 
   return (
-    <tr className={`${isTotal ? "border-t-2 border-slate-300 bg-slate-50 font-bold" : "border-t border-slate-100 hover:bg-slate-50"} transition-colors`}>
-      <td className={`py-3 px-4 text-sm ${isTotal ? "font-bold text-slate-800" : "text-slate-600"} ${indent ? "pl-10" : ""}`}>
+    <tr className={`${isTotal ? "border-t-2 border-slate-300 bg-slate-50 dark:bg-slate-900 font-bold" : "border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"} transition-colors`}>
+      <td className={`py-3 px-4 text-sm ${isTotal ? "font-bold text-slate-800 dark:text-white" : "text-slate-600 dark:text-slate-300"} ${indent ? "pl-10" : ""}`}>
         {indent && <ChevronRight size={12} className="inline mr-1 text-slate-400" />}
         {label}
       </td>
-      <td className={`py-3 px-4 text-sm text-right font-medium ${isTotal ? "text-slate-800" : color}`}>
+      <td className={`py-3 px-4 text-sm text-right font-medium ${isTotal ? "text-slate-800 dark:text-white" : color}`}>
         {fmt(Math.abs(value))}
-        {value < 0 && !isNegative && <span className="text-xs text-red-500 ml-1">(rugi)</span>}
+        {value < 0 && !isNegative && <span className="text-xs text-red-500 ml-1">(loss)</span>}
       </td>
     </tr>
   );
@@ -338,6 +340,8 @@ function EquityPanel({ data }: { data: FinancialReportData }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function LaporanPage() {
+  const { language } = useSettings();
+  const t = translations[language];
   const [mode, setMode] = useState<"bulanan" | "tahunan">("tahunan");
   const [bulan, setBulan] = useState(new Date().getMonth() + 1);
   const [tahun, setTahun] = useState(new Date().getFullYear());
@@ -345,6 +349,21 @@ export default function LaporanPage() {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<FinancialReportData | null>(null);
   const [error, setError] = useState("");
+
+  const BULAN_TRANSLATED = [
+    language === "en" ? "January" : language === "zh" ? "一月" : language === "ar" ? "يناير" : language === "pt" ? "Janeiro" : language === "es" ? "Enero" : "Januari",
+    language === "en" ? "February" : language === "zh" ? "二月" : language === "ar" ? "فبراير" : language === "pt" ? "Fevereiro" : language === "es" ? "Febrero" : "Februari",
+    language === "en" ? "March" : language === "zh" ? "三月" : language === "ar" ? "مارس" : language === "pt" ? "Março" : language === "es" ? "Marzo" : "Maret",
+    language === "en" ? "April" : language === "zh" ? "四月" : language === "ar" ? "أبريل" : language === "pt" ? "Abril" : language === "es" ? "Abril" : "April",
+    language === "en" ? "May" : language === "zh" ? "五月" : language === "ar" ? "مايو" : language === "pt" ? "Maio" : language === "es" ? "Mayo" : "Mei",
+    language === "en" ? "June" : language === "zh" ? "六月" : language === "ar" ? "يونيو" : language === "pt" ? "Junho" : language === "es" ? "Junio" : "Juni",
+    language === "en" ? "July" : language === "zh" ? "七月" : language === "ar" ? "يوليو" : language === "pt" ? "Julho" : language === "es" ? "Julio" : "Juli",
+    language === "en" ? "August" : language === "zh" ? "八月" : language === "ar" ? "أغسطس" : language === "pt" ? "Agosto" : language === "es" ? "Agosto" : "Agustus",
+    language === "en" ? "September" : language === "zh" ? "九月" : language === "ar" ? "سبتمبر" : language === "pt" ? "Setembro" : language === "es" ? "Septiembre" : "September",
+    language === "en" ? "October" : language === "zh" ? "十月" : language === "ar" ? "أكتوبر" : language === "pt" ? "Outubro" : language === "es" ? "Octubre" : "Oktober",
+    language === "en" ? "November" : language === "zh" ? "十一月" : language === "ar" ? "نوفمبر" : language === "pt" ? "Novembro" : language === "es" ? "Noviembre" : "November",
+    language === "en" ? "December" : language === "zh" ? "十二月" : language === "ar" ? "ديسمبر" : language === "pt" ? "Dezembro" : language === "es" ? "Diciembre" : "Desember",
+  ];
 
   const handleGenerate = useCallback(async () => {
     setLoading(true);
@@ -375,34 +394,34 @@ export default function LaporanPage() {
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 transition-colors">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <FileText size={24} className="text-blue-600" />
-            Laporan Keuangan
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <FileText size={24} className="text-blue-600 dark:text-blue-400" />
+            {t.report.title}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Generate laporan keuangan otomatis berdasarkan data transaksi Anda.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t.report.select_period}</p>
         </div>
         {report && (
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors print:hidden"
+            className="flex items-center gap-2 bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors print:hidden"
           >
             <Download size={16} />
-            Ekspor PDF
+            {t.report.export_pdf}
           </button>
         )}
       </div>
 
       {/* Filter Panel */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 print:hidden">
-        <h2 className="text-base font-bold text-slate-700 mb-4">Pilih Periode Laporan</h2>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 print:hidden transition-colors">
+        <h2 className="text-base font-bold text-slate-700 dark:text-slate-200 mb-4">{t.report.select_period}</h2>
         <div className="flex flex-wrap gap-4 items-end">
           {/* Mode toggle */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Jenis Periode</label>
-            <div className="flex rounded-lg overflow-hidden border border-slate-200">
+            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t.report.period_type}</label>
+            <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600">
               {(["bulanan", "tahunan"] as const).map((m) => (
                 <button
                   key={m}
@@ -410,10 +429,10 @@ export default function LaporanPage() {
                   className={`px-5 py-2 text-sm font-medium transition-colors capitalize ${
                     mode === m
                       ? "bg-blue-600 text-white"
-                      : "bg-white text-slate-600 hover:bg-slate-50"
+                      : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"
                   }`}
                 >
-                  {m === "bulanan" ? "Bulanan" : "Tahunan"}
+                  {m === "bulanan" ? t.report.monthly : t.report.annual}
                 </button>
               ))}
             </div>
@@ -422,13 +441,13 @@ export default function LaporanPage() {
           {/* Bulan — only for monthly */}
           {mode === "bulanan" && (
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Bulan</label>
+              <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t.report.month}</label>
               <select
                 value={bulan}
                 onChange={(e) => setBulan(Number(e.target.value))}
-                className="px-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="px-4 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               >
-                {BULAN.map((b, i) => (
+                {BULAN_TRANSLATED.map((b, i) => (
                   <option key={i} value={i + 1}>{b}</option>
                 ))}
               </select>
@@ -437,11 +456,11 @@ export default function LaporanPage() {
 
           {/* Tahun */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Tahun</label>
+            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t.report.year}</label>
             <select
               value={tahun}
               onChange={(e) => setTahun(Number(e.target.value))}
-              className="px-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="px-4 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             >
               {TAHUN_LIST.map((y) => (
                 <option key={y} value={y}>{y}</option>
@@ -451,17 +470,17 @@ export default function LaporanPage() {
 
           <div className="flex items-center ml-2 mb-1.5">
             {loading ? (
-              <span className="flex items-center gap-2 text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1.5 rounded-full">
-                <Loader2 size={14} className="animate-spin" /> Memperbarui...
+              <span className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full">
+                <Loader2 size={14} className="animate-spin" /> {t.dashboard.loading_ai}
               </span>
             ) : (
-              <span className="text-sm text-slate-400">Pilih periode untuk otomatis melihat laporan.</span>
+              <span className="text-sm text-slate-400 dark:text-slate-500">{t.report.select_period}</span>
             )}
           </div>
         </div>
 
         {error && (
-          <div className="mt-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100">
+          <div className="mt-4 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm border border-red-100 dark:border-red-800">
             {error}
           </div>
         )}
@@ -469,23 +488,23 @@ export default function LaporanPage() {
 
       {/* Report Output */}
       {report && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors">
           {/* Report header (shown on print) */}
           <div className="hidden print:block p-8 border-b border-slate-200 text-center">
-            <h1 className="text-2xl font-bold text-slate-900">KeuanganKu — Laporan Keuangan</h1>
-            <p className="text-slate-600 mt-1">Periode: {report.periode}</p>
+            <h1 className="text-2xl font-bold text-slate-900">KeuanganKu — {t.report.title}</h1>
+            <p className="text-slate-600 mt-1">{report.periode}</p>
           </div>
 
           {/* Tab bar */}
-          <div className="flex overflow-x-auto border-b border-slate-200 print:hidden">
+          <div className="flex overflow-x-auto border-b border-slate-200 dark:border-slate-700 print:hidden">
             {TABS.map(({ id, label, Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
                 className={`flex items-center gap-2 px-5 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === id
-                    ? "border-blue-600 text-blue-600 bg-blue-50"
-                    : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                    ? "border-blue-600 text-blue-600 bg-blue-50 dark:bg-blue-900/20"
+                    : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 }`}
               >
                 <Icon size={16} />
@@ -518,9 +537,9 @@ export default function LaporanPage() {
 
       {/* Loading state (initial) */}
       {!report && loading && (
-        <div className="flex flex-col items-center justify-center py-24 text-slate-400 gap-3">
+        <div className="flex flex-col items-center justify-center py-24 text-slate-400 dark:text-slate-500 gap-3">
           <Loader2 size={48} strokeWidth={1.2} className="animate-spin text-blue-500" />
-          <p className="text-base font-medium">Memuat laporan keuangan otomatis...</p>
+          <p className="text-base font-medium">{t.dashboard.loading_ai}</p>
         </div>
       )}
     </div>

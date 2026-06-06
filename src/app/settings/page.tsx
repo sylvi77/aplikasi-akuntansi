@@ -1,6 +1,7 @@
 "use client";
 
 import { useSettings } from "@/lib/SettingsContext";
+import { translations } from "@/lib/translations";
 import { Moon, Sun, Monitor, Image as ImageIcon, Languages, Palette, Upload } from "lucide-react";
 import { useState, useRef } from "react";
 
@@ -15,6 +16,7 @@ const LANGUAGES = [
 
 export default function AppSettingsPage() {
   const { theme, language, background, setTheme, setLanguage, setBackground } = useSettings();
+  const t = translations[language];
   const [bgInput, setBgInput] = useState(background);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,82 +54,75 @@ export default function AppSettingsPage() {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         ctx?.drawImage(img, 0, 0, width, height);
-
-        // Kompres ke JPEG kualiatas 70% agar muat di localStorage
         const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
         setBgInput(dataUrl);
       };
       img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
-    
-    // Reset input file
+
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
   return (
-    <div className="max-w-3xl space-y-8 pb-16">
+    <div className="max-w-3xl space-y-8 pb-16 transition-colors">
       <div>
         <h1 className="text-3xl font-bold text-slate-800 dark:text-white flex items-center gap-3">
           <Monitor className="text-blue-600 dark:text-blue-400" />
-          App Settings
+          {t.settings.title}
         </h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-2">
-          Sesuaikan tampilan, bahasa, dan nuansa aplikasi KeuanganKu.
-        </p>
+        <p className="text-slate-500 dark:text-slate-400 mt-2">{t.settings.desc}</p>
       </div>
 
       <div className="grid gap-6">
         {/* Theme Settings */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300">
               {theme === "light" ? <Sun size={20} /> : <Moon size={20} />}
             </div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Tampilan (Theme)</h2>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t.settings.theme_title}</h2>
           </div>
-          
+
           <div className="flex gap-4">
             <button
               onClick={() => setTheme("light")}
               className={`flex-1 py-4 flex flex-col items-center justify-center gap-2 rounded-xl border-2 transition-all ${
-                theme === "light" 
-                  ? "border-blue-600 bg-blue-50 text-blue-700" 
+                theme === "light"
+                  ? "border-blue-600 bg-blue-50 text-blue-700"
                   : "border-slate-200 dark:border-slate-600 hover:border-blue-300 text-slate-600 dark:text-slate-300"
               }`}
             >
               <Sun size={24} />
-              <span className="font-semibold">Terang (Light)</span>
+              <span className="font-semibold">{t.settings.light}</span>
             </button>
             <button
               onClick={() => setTheme("dark")}
               className={`flex-1 py-4 flex flex-col items-center justify-center gap-2 rounded-xl border-2 transition-all ${
-                theme === "dark" 
-                  ? "border-blue-600 bg-slate-700 text-blue-400" 
+                theme === "dark"
+                  ? "border-blue-600 bg-slate-700 text-blue-400"
                   : "border-slate-200 dark:border-slate-600 hover:border-blue-300 text-slate-600 dark:text-slate-300"
               }`}
             >
               <Moon size={24} />
-              <span className="font-semibold">Gelap (Dark)</span>
+              <span className="font-semibold">{t.settings.dark}</span>
             </button>
           </div>
         </div>
 
         {/* Custom Background Settings */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300">
               <ImageIcon size={20} />
             </div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Custom Background</h2>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t.settings.bg_title}</h2>
           </div>
-          
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            Ubah latar belakang halaman ini. Anda bisa memasukkan link gambar (URL) atau kode warna HEX (misal: <code className="bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">#e2e8f0</code>).
-          </p>
-          
+
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{t.settings.bg_desc}</p>
+
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="file"
@@ -141,13 +136,13 @@ export default function AppSettingsPage() {
               className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
             >
               <Upload size={18} />
-              Unggah Gambar
+              {t.settings.upload_image}
             </button>
             <input
               type="text"
               value={bgInput}
               onChange={(e) => setBgInput(e.target.value)}
-              placeholder="Atau isi URL gambar / kode warna (#e2e8f0)"
+              placeholder={t.settings.bg_placeholder}
               className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
             />
             <button
@@ -155,29 +150,27 @@ export default function AppSettingsPage() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
             >
               <Palette size={18} />
-              Terapkan
+              {t.settings.apply}
             </button>
           </div>
-          <button 
+          <button
             onClick={() => { setBgInput(""); setBackground(""); }}
             className="mt-3 text-sm text-red-500 hover:text-red-600 font-medium"
           >
-            Hapus Background
+            {t.settings.remove_bg}
           </button>
         </div>
 
         {/* Language Settings */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300">
               <Languages size={20} />
             </div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Pilihan Bahasa</h2>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t.settings.lang_title}</h2>
           </div>
-          
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            *(Catatan: Saat ini perubahan bahasa baru akan memengaruhi Sidebar dan sebagian kecil antarmuka untuk versi percobaan)*
-          </p>
+
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{t.settings.lang_note}</p>
 
           <select
             value={language}

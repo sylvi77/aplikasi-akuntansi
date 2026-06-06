@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
-
-// The chat API now fetches its own transaction summary from Supabase directly.
-// This page only needs to send the user's prompt text — no transaction data at all.
+import { useSettings } from '@/lib/SettingsContext';
+import { translations } from '@/lib/translations';
 
 type Message = {
   role: 'user' | 'assistant';
@@ -12,8 +11,11 @@ type Message = {
 };
 
 export default function AIAssistant() {
+  const { language } = useSettings();
+  const t = translations[language];
+
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Halo! Saya KeuanganKu AI. Ada yang bisa saya bantu terkait laporan keuangan Anda?' },
+    { role: 'assistant', content: t.assistant.listening },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +30,6 @@ export default function AIAssistant() {
     setIsLoading(true);
 
     try {
-      // Only send the prompt — the API fetches its own transaction summary.
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,13 +43,13 @@ export default function AIAssistant() {
       } else {
         setMessages((prev) => [
           ...prev,
-          { role: 'assistant', content: `Maaf, terjadi kesalahan: ${json.message}` },
+          { role: 'assistant', content: `Error: ${json.message}` },
         ]);
       }
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Maaf, terjadi kesalahan koneksi jaringan.' },
+        { role: 'assistant', content: 'Connection error. Please try again.' },
       ]);
     } finally {
       setIsLoading(false);
@@ -56,18 +57,18 @@ export default function AIAssistant() {
   };
 
   return (
-    <div className="h-[calc(100vh-80px)] md:h-full flex flex-col space-y-4">
+    <div className="h-[calc(100vh-80px)] md:h-full flex flex-col space-y-4 transition-colors">
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+        <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center">
           <Bot size={24} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">KeuanganKu AI</h1>
-          <p className="text-sm text-slate-500">Asisten cerdas untuk mengelola keuangan Anda</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t.assistant.title}</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">KeuanganKu AI</p>
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+      <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden transition-colors">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((msg, index) => (
             <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -75,7 +76,7 @@ export default function AIAssistant() {
                 className={`max-w-[80%] rounded-2xl p-4 flex gap-3 ${
                   msg.role === 'user'
                     ? 'bg-blue-600 text-white rounded-br-none'
-                    : 'bg-slate-100 text-slate-800 rounded-bl-none'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-bl-none'
                 }`}
               >
                 {msg.role === 'assistant' && <Bot size={20} className="shrink-0 mt-1" />}
@@ -86,23 +87,23 @@ export default function AIAssistant() {
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-slate-100 text-slate-500 rounded-2xl rounded-bl-none p-4 flex items-center gap-2">
+              <div className="bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-2xl rounded-bl-none p-4 flex items-center gap-2">
                 <Loader2 className="animate-spin" size={18} />
-                <span>AI sedang berpikir...</span>
+                <span>{t.dashboard.loading_ai}</span>
               </div>
             </div>
           )}
         </div>
 
-        <div className="p-4 border-t border-slate-100 bg-slate-50">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 transition-colors">
           <form onSubmit={handleSend} className="flex gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Tanya tentang pemasukan, pengeluaran, atau saran hemat..."
+              placeholder={t.assistant.placeholder}
               disabled={isLoading}
-              className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50"
+              className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50"
             />
             <button
               type="submit"
