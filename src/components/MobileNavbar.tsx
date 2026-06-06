@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, PlusCircle, List, MessageSquare, Settings, Menu, X } from "lucide-react";
+import { LayoutDashboard, PlusCircle, List, MessageSquare, Settings, Menu, X, FileText } from "lucide-react";
 import { useState } from "react";
 
 export default function MobileNavbar() {
@@ -37,6 +37,10 @@ export default function MobileNavbar() {
           <Link href="/pengaturan" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 text-slate-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors font-medium">
             <Settings size={20} />
             Pengaturan
+          </Link>
+          <Link href="/laporan" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 text-slate-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors font-medium">
+            <FileText size={20} />
+            Laporan Keuangan
           </Link>
         </nav>
       )}

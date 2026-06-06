@@ -1,19 +1,15 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
-
-// Singleton — built once per server cold-start, reused across requests.
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
-const model = genAI?.getGenerativeModel({ model: 'gemini-1.5-flash' }) ?? null;
+import { getGeminiModel, isGeminiConfigured } from '@/lib/gemini';
 
 export async function POST(request: Request) {
   try {
     const { transactions } = await request.json();
 
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === 'GANTI_DENGAN_GEMINI_API_KEY') {
+    if (!isGeminiConfigured) {
       return NextResponse.json({ success: false, message: 'Kredensial Gemini API belum dikonfigurasi.' }, { status: 400 });
     }
+
+    const model = getGeminiModel('gemini-2.5-flash');
 
     if (!transactions || transactions.length === 0) {
       return NextResponse.json({ success: true, saran: ['Belum ada data transaksi yang cukup untuk dianalisis.'] });
@@ -36,7 +32,7 @@ export async function POST(request: Request) {
 
     const prompt = `Anda adalah penasihat keuangan pribadi. Berikut adalah total pengeluaran pengguna selama 30 hari terakhir berdasarkan kategori:\n${konteks}\nTotal Pengeluaran: Rp ${totalPengeluaran.toLocaleString('id-ID')}\n\nTugas Anda: Berikan TEPAT 3 saran penghematan yang spesifik, praktis, dan langsung dapat diterapkan berdasarkan data kategori pengeluaran terbesar tersebut.\nFormat output Anda harus berupa JSON murni (array of strings) tanpa awalan markdown \`\`\`json.\nContoh: ["Saran 1...", "Saran 2...", "Saran 3..."]`;
 
-    const result = await model!.generateContent(prompt);
+    const result = await model.generateContent(prompt);
     let text = result.response.text().trim();
 
     // Clean up markdown block if model still outputs it

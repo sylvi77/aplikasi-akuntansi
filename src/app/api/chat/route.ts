@@ -1,23 +1,19 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from '@/lib/supabase';
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
-
-// Singleton — built once per server cold-start, reused across requests.
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
-const model = genAI?.getGenerativeModel({ model: 'gemini-2.5-flash' }) ?? null;
+import { getGeminiModel, isGeminiConfigured } from '@/lib/gemini';
 
 export async function POST(request: Request) {
   try {
     const { prompt } = await request.json();
 
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === 'GANTI_DENGAN_GEMINI_API_KEY') {
+    if (!isGeminiConfigured) {
       return NextResponse.json({
         success: false,
         message: 'Kredensial Gemini API belum dikonfigurasi.',
       }, { status: 400 });
     }
+
+    const model = getGeminiModel('gemini-2.5-flash');
 
     // Fetch a compact summary from Supabase directly — no need for the client
     // to send raw transaction arrays over the wire anymore.
@@ -64,7 +60,7 @@ Pertanyaan pengguna: ${prompt}
     
 Jawablah dengan ringkas, informatif, dan solutif berdasarkan konteks data di atas.`;
 
-    const result = await model!.generateContent(fullPrompt);
+    const result = await model.generateContent(fullPrompt);
     const responseText = result.response.text();
 
     return NextResponse.json({ success: true, text: responseText });

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LayoutDashboard, PlusCircle, List, MessageSquare, Settings } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, List, MessageSquare, Settings, FileText } from 'lucide-react';
 
 export default function Sidebar() {
   return (
@@ -27,6 +27,10 @@ export default function Sidebar() {
         <Link href="/pengaturan" className="flex items-center gap-3 px-4 py-3 text-slate-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors font-medium">
           <Settings size={20} />
           Pengaturan
+        </Link>
+        <Link href="/laporan" className="flex items-center gap-3 px-4 py-3 text-slate-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors font-medium">
+          <FileText size={20} />
+          Laporan Keuangan
         </Link>
       </nav>
       <div className="p-4 border-t border-slate-100 text-xs text-center text-slate-400">
