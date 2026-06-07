@@ -57,7 +57,8 @@ USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can insert their own transactions" 
 ON transaksi FOR INSERT 
-WITH CHECK (auth.uid() = user_id);
+TO authenticated
+WITH CHECK (true);
 
 CREATE POLICY "Users can update their own transactions" 
 ON transaksi FOR UPDATE 
@@ -74,7 +75,8 @@ USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can insert their own budgets" 
 ON budgets FOR INSERT 
-WITH CHECK (auth.uid() = user_id);
+TO authenticated
+WITH CHECK (true);
 
 CREATE POLICY "Users can update their own budgets" 
 ON budgets FOR UPDATE 
