@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-import { getGeminiModel, isGeminiConfigured } from '@/lib/gemini';
+import { generateWithFallback, isGeminiConfigured } from '@/lib/gemini';
 
 export async function POST(request: Request) {
   try {
@@ -19,8 +19,6 @@ export async function POST(request: Request) {
         message: 'Kredensial Gemini API belum dikonfigurasi.',
       }, { status: 400 });
     }
-
-    const model = getGeminiModel('gemini-2.5-flash');
 
     // Fetch a compact summary from Supabase directly — no need for the client
     // to send raw transaction arrays over the wire anymore.
@@ -89,17 +87,14 @@ Pertanyaan pengguna: ${prompt}
 
 Sekali lagi, balas HANYA dengan JSON yang valid sesuai struktur di atas.`;
 
-    const result = await model.generateContent(fullPrompt);
-    let responseText = result.response.text();
-    
-    // Clean up potential markdown formatting if the model still outputs it
-    responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+    const responseText = await generateWithFallback(fullPrompt, 'gemini-2.5-flash');
+    const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
 
     let parsedData;
     try {
-      parsedData = JSON.parse(responseText);
+      parsedData = JSON.parse(cleaned);
     } catch (e) {
-      console.error('Failed to parse JSON:', responseText);
+      console.error('Failed to parse JSON:', cleaned);
       return NextResponse.json({ success: false, message: 'Gagal memproses respon dari AI.' }, { status: 500 });
     }
 

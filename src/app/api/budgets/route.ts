@@ -34,22 +34,41 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json(); 
+    const body = await request.json();
     if (typeof body.jumlah !== 'number') {
-       return NextResponse.json({ success: false, message: 'Invalid payload: missing jumlah' }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'Invalid payload: missing jumlah' }, { status: 400 });
     }
 
-    // Upsert a single budget configuration per user
-    const { error } = await supabase
+    // Check whether a budget row already exists for this user.
+    // We avoid ON CONFLICT entirely so no unique constraint is required.
+    const { data: existing, error: fetchError } = await supabase
       .from('budgets')
-      .upsert({
-        user_id: user.id,
-        jumlah: body.jumlah
-      }, { onConflict: 'user_id' });
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    if (error) throw error;
+    if (fetchError) throw fetchError;
 
-    return NextResponse.json({ success: true, message: 'Budgets berhasil diperbarui' });
+    let saveError: any = null;
+
+    if (existing) {
+      // Row exists — update it
+      const { error } = await supabase
+        .from('budgets')
+        .update({ jumlah: body.jumlah })
+        .eq('user_id', user.id);
+      saveError = error;
+    } else {
+      // No row yet — insert a new one
+      const { error } = await supabase
+        .from('budgets')
+        .insert({ user_id: user.id, jumlah: body.jumlah });
+      saveError = error;
+    }
+
+    if (saveError) throw saveError;
+
+    return NextResponse.json({ success: true, message: 'Budget berhasil diperbarui' });
   } catch (error: any) {
     console.error('API POST Budgets Error:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

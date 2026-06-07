@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-import { getGeminiModel, isGeminiConfigured } from '@/lib/gemini';
+import { generateWithFallback, isGeminiConfigured } from '@/lib/gemini';
 
 export async function POST(request: Request) {
   try {
@@ -68,7 +68,6 @@ export async function POST(request: Request) {
 
     if (isGeminiConfigured) {
       try {
-        const model = getGeminiModel('gemini-2.5-flash');
         const rataStr = histData.length >= 5
           ? `Rata-rata transaksi ${tipe} sebelumnya: Rp ${Math.round(histData.reduce((s,v)=>s+v,0)/histData.length).toLocaleString('id-ID')}.`
           : `Threshold standar: Rp ${FLAT_THRESHOLD.toLocaleString('id-ID')}.`;
@@ -84,8 +83,7 @@ Jumlah ini jauh di atas normal (tingkat keparahan: ${severity === 'high' ? 'TING
 
 Tugas Anda: Berikan peringatan singkat (maksimal 2-3 kalimat) dalam bahasa Indonesia yang ramah namun tegas. Sebutkan jumlahnya, kenapa ini perlu diperhatikan, dan 1 saran praktis. Jangan gunakan formatting markdown.`;
 
-        const result = await model.generateContent(prompt);
-        message = result.response.text().trim();
+        message = (await generateWithFallback(prompt, 'gemini-2.5-flash')).trim();
       } catch {
         // Fallback to default message if AI fails
       }

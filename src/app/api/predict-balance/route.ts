@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getGeminiModel, isGeminiConfigured } from '@/lib/gemini';
+import { generateWithFallback, isGeminiConfigured } from '@/lib/gemini';
 import { createClient } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
@@ -17,8 +17,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Kredensial Gemini API belum dikonfigurasi.' }, { status: 400 });
     }
 
-    const model = getGeminiModel('gemini-2.5-flash');
-
     if (!transactions || transactions.length === 0) {
       return NextResponse.json({ success: true, prediksi: 'Data transaksi belum cukup untuk melakukan prediksi.' });
     }
@@ -34,8 +32,7 @@ export async function POST(request: Request) {
 
     const prompt = `Anda adalah analis keuangan AI. \nSaldo pengguna saat ini adalah: Rp ${saldoSekarang.toLocaleString('id-ID')}.\nSelama beberapa bulan terakhir, akumulasi pemasukan: Rp ${pemasukanTotal.toLocaleString('id-ID')} dan pengeluaran: Rp ${pengeluaranTotal.toLocaleString('id-ID')}.\n\nBerdasarkan tren ini, berikan prediksi singkat (maksimal 2 kalimat) mengenai perkiraan saldo pengguna di akhir bulan depan dan apakah tren keuangannya sehat. Usahakan menyebutkan perkiraan angka spesifik berdasarkan selisih rata-rata pemasukan dan pengeluaran. Jangan gunakan formatting berlebihan, gunakan teks biasa.`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const text = (await generateWithFallback(prompt, 'gemini-2.5-flash')).trim();
 
     return NextResponse.json({ success: true, prediksi: text });
   } catch (error: any) {
