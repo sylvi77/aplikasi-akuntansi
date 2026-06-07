@@ -37,51 +37,27 @@ ALTER TABLE transaksi ENABLE ROW LEVEL SECURITY;
 ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
 
 
--- 3. Hapus Kebijakan Lama (yang menggunakan USING (true))
+-- 3. Matikan RLS sementara dan Hapus Semua Kebijakan Lama
+ALTER TABLE transaksi DISABLE ROW LEVEL SECURITY;
+ALTER TABLE budgets DISABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own transactions" ON transaksi;
+DROP POLICY IF EXISTS "Users can insert their own transactions" ON transaksi;
+DROP POLICY IF EXISTS "Users can update their own transactions" ON transaksi;
+DROP POLICY IF EXISTS "Users can delete their own transactions" ON transaksi;
 DROP POLICY IF EXISTS "Allow anonymous read access on transaksi" ON transaksi;
 DROP POLICY IF EXISTS "Allow anonymous insert access on transaksi" ON transaksi;
-DROP POLICY IF EXISTS "Allow anonymous update access on transaksi" ON transaksi;
-DROP POLICY IF EXISTS "Allow anonymous delete access on transaksi" ON transaksi;
 
-DROP POLICY IF EXISTS "Allow anonymous read access on budgets" ON budgets;
-DROP POLICY IF EXISTS "Allow anonymous insert access on budgets" ON budgets;
-DROP POLICY IF EXISTS "Allow anonymous update access on budgets" ON budgets;
-DROP POLICY IF EXISTS "Allow anonymous delete access on budgets" ON budgets;
+DROP POLICY IF EXISTS "Users can view their own budgets" ON budgets;
+DROP POLICY IF EXISTS "Users can insert their own budgets" ON budgets;
+DROP POLICY IF EXISTS "Users can update their own budgets" ON budgets;
+DROP POLICY IF EXISTS "Users can delete their own budgets" ON budgets;
 
+-- 4. Buat SATU Kebijakan Master untuk Authenticated Users
+-- Validasi user_id sepenuhnya diurus oleh backend Vercel (defense in depth).
+CREATE POLICY "transaksi_master_policy" ON transaksi FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "budgets_master_policy" ON budgets FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- 4. Buat Kebijakan Baru (ISOLASI DATA PER USER)
--- Transaksi Policies
-CREATE POLICY "Users can view their own transactions" 
-ON transaksi FOR SELECT 
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own transactions" 
-ON transaksi FOR INSERT 
-TO authenticated
-WITH CHECK (true);
-
-CREATE POLICY "Users can update their own transactions" 
-ON transaksi FOR UPDATE 
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own transactions" 
-ON transaksi FOR DELETE 
-USING (auth.uid() = user_id);
-
--- Budgets Policies
-CREATE POLICY "Users can view their own budgets" 
-ON budgets FOR SELECT 
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own budgets" 
-ON budgets FOR INSERT 
-TO authenticated
-WITH CHECK (true);
-
-CREATE POLICY "Users can update their own budgets" 
-ON budgets FOR UPDATE 
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own budgets" 
-ON budgets FOR DELETE 
-USING (auth.uid() = user_id);
+-- 5. Aktifkan RLS kembali
+ALTER TABLE transaksi ENABLE ROW LEVEL SECURITY;
+ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
