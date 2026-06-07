@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-server';
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
     const id = (await params).id;
     
     const { error } = await supabase
       .from('transaksi')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id); // Explicit user_id check as extra safety
 
     if (error) throw error;
 
@@ -21,6 +29,13 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
     const id = (await params).id;
     const body = await request.json();
     
@@ -34,7 +49,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { error } = await supabase
       .from('transaksi')
       .update(updates)
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id); // Explicit user_id check
 
     if (error) throw error;
 

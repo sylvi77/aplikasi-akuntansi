@@ -1,15 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, PlusCircle, List, MessageSquare, Settings, Menu, X, FileText, PiggyBank } from "lucide-react";
+import { useRouter } from 'next/navigation';
+import { LayoutDashboard, PlusCircle, List, MessageSquare, Settings, Menu, X, FileText, PiggyBank, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useSettings } from "@/lib/SettingsContext";
 import { translations } from "@/lib/translations";
+import { createClient } from '@/lib/supabase-client';
 
 export default function MobileNavbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { language } = useSettings();
   const t = translations[language];
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
 
   return (
     <div className="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
@@ -24,7 +34,7 @@ export default function MobileNavbar() {
       </div>
 
       {isOpen && (
-        <nav className="px-4 pb-4 space-y-2 border-t border-slate-100 dark:border-slate-800 pt-2 transition-colors">
+        <nav className="px-4 pb-4 space-y-2 border-t border-slate-100 dark:border-slate-800 pt-2 transition-colors max-h-[80vh] overflow-y-auto">
           <Link href="/" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
             <LayoutDashboard size={20} />
             {t.sidebar.dashboard}
@@ -53,6 +63,12 @@ export default function MobileNavbar() {
             <Settings size={20} />
             {t.sidebar.app_settings}
           </Link>
+          <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors font-medium">
+              <LogOut size={20} />
+              Keluar
+            </button>
+          </div>
         </nav>
       )}
     </div>

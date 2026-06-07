@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getGeminiModel, isGeminiConfigured } from '@/lib/gemini';
+import { createClient } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
     const { transactions, saldoSekarang } = await request.json();
 
     if (!isGeminiConfigured) {

@@ -1,16 +1,23 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-server';
 import { getGeminiModel, isGeminiConfigured } from '@/lib/gemini';
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
     const { tanggal, deskripsi, tipe, jumlah, kategori } = await request.json();
 
     if (!jumlah || !tipe) {
       return NextResponse.json({ success: true, isAlert: false });
     }
 
-    // --- Fetch historical transactions of the same type ---
+    // --- Fetch historical transactions of the same type for this user ---
     const { data: historis } = await supabase
       .from('transaksi')
       .select('jumlah')

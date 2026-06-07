@@ -1,24 +1,59 @@
 "use client";
 
 import { useState } from 'react';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { useSettings } from '@/lib/SettingsContext';
 import { translations } from '@/lib/translations';
+import { useTransactions } from '@/hooks/useTransactions';
 
 type Message = {
   role: 'user' | 'assistant';
   content: string;
+  isTransactionCard?: boolean;
+  transactionData?: {
+    tipe: 'Pemasukan' | 'Pengeluaran';
+    kategori: string;
+    jumlah: number;
+    deskripsi: string;
+    tanggal: string;
+  };
+  cardStatus?: 'pending' | 'saved' | 'canceled';
 };
 
 export default function AIAssistant() {
   const { language } = useSettings();
   const t = translations[language];
+  const { addTransaction } = useTransactions();
 
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: t.assistant.listening },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleConfirmSave = async (msgIndex: number, transactionData: Message['transactionData']) => {
+    if (!transactionData) return;
+    try {
+      await addTransaction(transactionData as any);
+      setMessages(prev => {
+        const newMsg = [...prev];
+        newMsg[msgIndex] = { ...newMsg[msgIndex], cardStatus: 'saved' };
+        newMsg.push({ role: 'assistant', content: 'Transaksi berhasil disimpan ke sistem! ✅' });
+        return newMsg;
+      });
+    } catch (error: any) {
+      setMessages(prev => [...prev, { role: 'assistant', content: `Gagal menyimpan: ${error.message}` }]);
+    }
+  };
+
+  const handleCancelSave = (msgIndex: number) => {
+    setMessages(prev => {
+      const newMsg = [...prev];
+      newMsg[msgIndex] = { ...newMsg[msgIndex], cardStatus: 'canceled' };
+      newMsg.push({ role: 'assistant', content: 'Baik, transaksi tidak jadi disimpan.' });
+      return newMsg;
+    });
+  };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,12 +73,21 @@ export default function AIAssistant() {
 
       const json = await res.json();
 
-      if (json.success) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: json.text }]);
+      if (json.success && json.data) {
+        setMessages((prev) => [
+          ...prev, 
+          { 
+            role: 'assistant', 
+            content: json.data.message,
+            isTransactionCard: json.data.isTransaction,
+            transactionData: json.data.transactionData,
+            cardStatus: json.data.isTransaction ? 'pending' : undefined
+          }
+        ]);
       } else {
         setMessages((prev) => [
           ...prev,
-          { role: 'assistant', content: `Error: ${json.message}` },
+          { role: 'assistant', content: `Error: ${json.message || 'Respons tidak valid'}` },
         ]);
       }
     } catch {
@@ -73,15 +117,51 @@ export default function AIAssistant() {
           {messages.map((msg, index) => (
             <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`max-w-[80%] rounded-2xl p-4 flex gap-3 ${
+                className={`max-w-[80%] rounded-2xl p-4 flex gap-3 flex-col ${
                   msg.role === 'user'
                     ? 'bg-blue-600 text-white rounded-br-none'
                     : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-bl-none'
                 }`}
               >
-                {msg.role === 'assistant' && <Bot size={20} className="shrink-0 mt-1" />}
-                {msg.role === 'user' && <User size={20} className="shrink-0 mt-1" />}
-                <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                <div className="flex gap-3">
+                  {msg.role === 'assistant' && <Bot size={20} className="shrink-0 mt-1" />}
+                  {msg.role === 'user' && <User size={20} className="shrink-0 mt-1" />}
+                  <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                </div>
+
+                {msg.isTransactionCard && msg.transactionData && (
+                  <div className="mt-2 bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-600 shadow-sm flex flex-col gap-2">
+                    <div className="font-semibold text-sm text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-700 pb-2 mb-1 flex items-center justify-between">
+                      <span>Transaction Detected</span>
+                      {msg.cardStatus === 'saved' && <CheckCircle2 size={16} className="text-green-500" />}
+                      {msg.cardStatus === 'canceled' && <XCircle size={16} className="text-red-500" />}
+                    </div>
+                    <div className="text-sm space-y-1">
+                      <p><span className="text-slate-500 dark:text-slate-400">Type:</span> {msg.transactionData.tipe}</p>
+                      <p><span className="text-slate-500 dark:text-slate-400">Category:</span> {msg.transactionData.kategori}</p>
+                      <p><span className="text-slate-500 dark:text-slate-400">Amount:</span> <span className="font-semibold text-blue-600 dark:text-blue-400">Rp {msg.transactionData.jumlah.toLocaleString('id-ID')}</span></p>
+                      <p><span className="text-slate-500 dark:text-slate-400">Title:</span> {msg.transactionData.deskripsi}</p>
+                      <p><span className="text-slate-500 dark:text-slate-400">Date:</span> {msg.transactionData.tanggal}</p>
+                    </div>
+
+                    {msg.cardStatus === 'pending' && (
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                        <button 
+                          onClick={() => handleConfirmSave(index, msg.transactionData)}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
+                        >
+                          <CheckCircle2 size={16} /> Confirm Save
+                        </button>
+                        <button 
+                          onClick={() => handleCancelSave(index)}
+                          className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
+                        >
+                          <XCircle size={16} /> Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}

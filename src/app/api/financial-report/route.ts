@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-server';
 
 export interface FinancialReportData {
   periode: string;
@@ -51,6 +51,13 @@ interface EquityStatement {
 
 export async function GET(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const mode = searchParams.get('mode') ?? 'bulanan'; // 'bulanan' | 'tahunan'
     const tahun = parseInt(searchParams.get('tahun') ?? String(new Date().getFullYear()));

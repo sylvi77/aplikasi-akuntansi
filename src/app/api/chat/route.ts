@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-server';
 import { getGeminiModel, isGeminiConfigured } from '@/lib/gemini';
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
     const { prompt } = await request.json();
 
     if (!isGeminiConfigured) {
@@ -17,6 +24,7 @@ export async function POST(request: Request) {
 
     // Fetch a compact summary from Supabase directly — no need for the client
     // to send raw transaction arrays over the wire anymore.
+    // RLS will automatically isolate the data for the logged-in user.
     const [totalsResult, recentResult] = await Promise.all([
       supabase
         .from('transaksi')
@@ -52,18 +60,48 @@ export async function POST(request: Request) {
       contextData += 'Belum ada data transaksi yang dicatat.\n';
     }
 
-    const fullPrompt = `Anda adalah asisten keuangan pribadi bernama "KeuanganKu AI" yang cerdas dan ramah, dirancang untuk membantu pengguna mengelola keuangan mereka di Indonesia. Berikan jawaban dalam bahasa Indonesia.
-    
+    const todayDate = new Date().toISOString().split('T')[0];
+
+    const fullPrompt = `Anda adalah asisten keuangan pribadi bernama "KeuanganKu AI" yang cerdas dan ramah.
+Tugas Anda adalah:
+1. Menjawab pertanyaan terkait keuangan.
+2. Mendeteksi jika pesan pengguna adalah instruksi untuk mencatat/menyimpan transaksi keuangan (pemasukan atau pengeluaran).
+
+Output Anda WAJIB berupa JSON valid dengan struktur berikut (tanpa markdown block, tanpa text lain di luar JSON):
+{
+  "isTransaction": boolean, // true jika pesan bermaksud mencatat transaksi, false jika pertanyaan biasa
+  "message": string, // Balasan natural dari Anda untuk pengguna
+  "transactionData": { // Wajib diisi jika isTransaction true
+    "tipe": "Pemasukan" | "Pengeluaran",
+    "kategori": "Food" | "Transportation" | "Entertainment" | "Shopping" | "Bills" | "Salary" | "Others",
+    "jumlah": number, // Angka numerik murni
+    "deskripsi": string, // Judul transaksi singkat
+    "tanggal": string // Gunakan ${todayDate} jika tidak disebutkan
+  }
+}
+
+Konteks data saat ini:
 ${contextData}
     
 Pertanyaan pengguna: ${prompt}
-    
-Jawablah dengan ringkas, informatif, dan solutif berdasarkan konteks data di atas.`;
+
+Sekali lagi, balas HANYA dengan JSON yang valid sesuai struktur di atas.`;
 
     const result = await model.generateContent(fullPrompt);
-    const responseText = result.response.text();
+    let responseText = result.response.text();
+    
+    // Clean up potential markdown formatting if the model still outputs it
+    responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
 
-    return NextResponse.json({ success: true, text: responseText });
+    let parsedData;
+    try {
+      parsedData = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse JSON:', responseText);
+      return NextResponse.json({ success: false, message: 'Gagal memproses respon dari AI.' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {
     console.error('API POST Chat Error:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
