@@ -4,19 +4,24 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import Link from 'next/link';
-import { Loader2, Mail, Lock, AlertCircle, Wallet } from 'lucide-react';
+import { Loader2, Mail, Lock, AlertCircle, Wallet, CheckCircle2 } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [showResend, setShowResend] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
+    setShowResend(false);
     setIsLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -25,16 +30,38 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setError(
-        error.message === 'Invalid login credentials'
-          ? 'Email atau password salah. Silakan coba lagi.'
-          : error.message
-      );
+      if (error.message === 'Invalid login credentials') {
+        setError('Email atau password salah. Silakan coba lagi.');
+      } else if (error.message === 'Email not confirmed') {
+        setError('Email Anda belum diverifikasi. Silakan cek kotak masuk/spam Anda.');
+        setShowResend(true);
+      } else {
+        setError(error.message);
+      }
       setIsLoading(false);
     } else {
       router.push('/');
       router.refresh();
     }
+  };
+
+  const handleResend = async () => {
+    setIsResending(true);
+    setError(null);
+    setSuccess(null);
+    
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+    });
+
+    if (error) {
+      setError('Gagal mengirim ulang email: ' + error.message);
+    } else {
+      setSuccess('Email verifikasi telah dikirim ulang! Silakan cek kotak masuk Anda.');
+      setShowResend(false);
+    }
+    setIsResending(false);
   };
 
   return (
@@ -66,9 +93,28 @@ export default function LoginPage() {
             <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">Masuk ke akun Anda untuk melanjutkan</p>
 
             {error && (
-              <div className="flex items-start gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl p-4 mb-5 text-sm">
-                <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                <span>{error}</span>
+              <div className="flex flex-col gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl p-4 mb-5 text-sm">
+                <div className="flex items-start gap-3">
+                  <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+                {showResend && (
+                  <button 
+                    onClick={handleResend}
+                    disabled={isResending}
+                    className="ml-7 self-start text-xs font-semibold bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-800 text-red-800 dark:text-red-300 py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                  >
+                    {isResending ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                    {isResending ? 'Mengirim...' : 'Kirim Ulang Email'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {success && (
+              <div className="flex items-start gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 rounded-xl p-4 mb-5 text-sm">
+                <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
+                <span>{success}</span>
               </div>
             )}
 
