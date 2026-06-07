@@ -10,6 +10,11 @@ ALTER TABLE transaksi ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.user
 -- kita harus ubah agar PRIMARY KEY adalah kombinasi (kategori, user_id).
 ALTER TABLE budgets ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
+-- [PERBAIKAN ERROR] Hapus data lama yang tidak memiliki user_id (NULL)
+-- karena Primary Key tidak boleh memiliki nilai NULL.
+DELETE FROM transaksi WHERE user_id IS NULL;
+DELETE FROM budgets WHERE user_id IS NULL;
+
 -- Hapus PRIMARY KEY lama pada budgets jika ada, lalu buat kombinasi PK baru
 DO $$
 BEGIN
