@@ -83,6 +83,9 @@ export async function generateWithFallback(
       const message: string = err?.message ?? String(err);
       const isOverloaded =
         message.includes('503') ||
+        message.includes('429') ||
+        message.includes('quota') ||
+        message.includes('exhausted') ||
         message.includes('overloaded') ||
         message.includes('Service Unavailable') ||
         message.includes('high demand');
