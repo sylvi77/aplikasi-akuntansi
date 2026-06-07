@@ -84,6 +84,7 @@ export async function GET(request: Request) {
     const { data: transaksi, error } = await supabase
       .from('transaksi')
       .select('*')
+      .eq('user_id', user.id)
       .gte('tanggal', startDate)
       .lte('tanggal', endDate)
       .order('tanggal', { ascending: true });
@@ -96,6 +97,7 @@ export async function GET(request: Request) {
     const { data: allPrev } = await supabase
       .from('transaksi')
       .select('tipe, jumlah')
+      .eq('user_id', user.id)
       .lt('tanggal', startDate);
 
     const prevRows = allPrev ?? [];

@@ -12,8 +12,8 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabase
       .from('budgets')
-      .select('*');
-      // RLS automatically filters by user_id
+      .select('*')
+      .eq('user_id', user.id); // Explicit defense-in-depth filter
 
     if (error) throw error;
 

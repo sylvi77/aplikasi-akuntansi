@@ -28,10 +28,12 @@ export async function POST(request: Request) {
     const [totalsResult, recentResult] = await Promise.all([
       supabase
         .from('transaksi')
-        .select('tipe, jumlah'),
+        .select('tipe, jumlah')
+        .eq('user_id', user.id),
       supabase
         .from('transaksi')
         .select('tanggal, deskripsi, kategori, tipe, jumlah')
+        .eq('user_id', user.id)
         .order('tanggal', { ascending: false })
         .limit(5),
     ]);

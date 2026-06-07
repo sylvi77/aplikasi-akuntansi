@@ -21,6 +21,7 @@ export async function POST(request: Request) {
     const { data: historis } = await supabase
       .from('transaksi')
       .select('jumlah')
+      .eq('user_id', user.id)
       .eq('tipe', tipe)
       .lt('tanggal', tanggal);
 

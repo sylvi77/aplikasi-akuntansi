@@ -1,64 +1,80 @@
 -- ============================================================
--- KeuanganKu - Supabase Database Setup
+-- KeuanganKu - Supabase Database Setup (AUTH & ISOLATION V2)
 -- Run this in: Supabase Dashboard > SQL Editor > New Query
 -- ============================================================
 
--- Table: transaksi
-CREATE TABLE IF NOT EXISTS transaksi (
-  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  tanggal DATE NOT NULL,
-  deskripsi TEXT NOT NULL,
-  tipe TEXT NOT NULL CHECK (tipe IN ('Pemasukan', 'Pengeluaran')),
-  jumlah NUMERIC NOT NULL,
-  kategori TEXT NOT NULL,
-  "createdAt" TIMESTAMPTZ DEFAULT now()
-);
+-- 1. Tambahkan kolom user_id jika belum ada
+ALTER TABLE transaksi ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
--- Table: budgets
-CREATE TABLE IF NOT EXISTS budgets (
-  kategori TEXT PRIMARY KEY,
-  jumlah NUMERIC NOT NULL DEFAULT 0,
-  "updatedAt" TIMESTAMPTZ DEFAULT now()
-);
+-- Karena tabel budgets memiliki kategori sebagai PRIMARY KEY sebelumnya,
+-- kita harus ubah agar PRIMARY KEY adalah kombinasi (kategori, user_id).
+ALTER TABLE budgets ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
--- Enable RLS (Row Level Security)
+-- Hapus PRIMARY KEY lama pada budgets jika ada, lalu buat kombinasi PK baru
+DO $$
+BEGIN
+  BEGIN
+    ALTER TABLE budgets DROP CONSTRAINT budgets_pkey;
+  EXCEPTION
+    WHEN undefined_object THEN null;
+  END;
+  
+  BEGIN
+    ALTER TABLE budgets ADD PRIMARY KEY (kategori, user_id);
+  EXCEPTION
+    WHEN invalid_table_definition THEN null;
+  END;
+END $$;
+
+
+-- 2. Pastikan RLS Aktif
 ALTER TABLE transaksi ENABLE ROW LEVEL SECURITY;
 ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for transaksi
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow anonymous read access on transaksi') THEN
-    CREATE POLICY "Allow anonymous read access on transaksi" ON transaksi FOR SELECT USING (true);
-  END IF;
-  
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow anonymous insert access on transaksi') THEN
-    CREATE POLICY "Allow anonymous insert access on transaksi" ON transaksi FOR INSERT WITH CHECK (true);
-  END IF;
-  
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow anonymous update access on transaksi') THEN
-    CREATE POLICY "Allow anonymous update access on transaksi" ON transaksi FOR UPDATE USING (true);
-  END IF;
-  
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow anonymous delete access on transaksi') THEN
-    CREATE POLICY "Allow anonymous delete access on transaksi" ON transaksi FOR DELETE USING (true);
-  END IF;
 
-  -- RLS Policies for budgets
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow anonymous read access on budgets') THEN
-    CREATE POLICY "Allow anonymous read access on budgets" ON budgets FOR SELECT USING (true);
-  END IF;
+-- 3. Hapus Kebijakan Lama (yang menggunakan USING (true))
+DROP POLICY IF EXISTS "Allow anonymous read access on transaksi" ON transaksi;
+DROP POLICY IF EXISTS "Allow anonymous insert access on transaksi" ON transaksi;
+DROP POLICY IF EXISTS "Allow anonymous update access on transaksi" ON transaksi;
+DROP POLICY IF EXISTS "Allow anonymous delete access on transaksi" ON transaksi;
 
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow anonymous insert access on budgets') THEN
-    CREATE POLICY "Allow anonymous insert access on budgets" ON budgets FOR INSERT WITH CHECK (true);
-  END IF;
+DROP POLICY IF EXISTS "Allow anonymous read access on budgets" ON budgets;
+DROP POLICY IF EXISTS "Allow anonymous insert access on budgets" ON budgets;
+DROP POLICY IF EXISTS "Allow anonymous update access on budgets" ON budgets;
+DROP POLICY IF EXISTS "Allow anonymous delete access on budgets" ON budgets;
 
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow anonymous update access on budgets') THEN
-    CREATE POLICY "Allow anonymous update access on budgets" ON budgets FOR UPDATE USING (true);
-  END IF;
 
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow anonymous delete access on budgets') THEN
-    CREATE POLICY "Allow anonymous delete access on budgets" ON budgets FOR DELETE USING (true);
-  END IF;
-END
-$$;
+-- 4. Buat Kebijakan Baru (ISOLASI DATA PER USER)
+-- Transaksi Policies
+CREATE POLICY "Users can view their own transactions" 
+ON transaksi FOR SELECT 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own transactions" 
+ON transaksi FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own transactions" 
+ON transaksi FOR UPDATE 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own transactions" 
+ON transaksi FOR DELETE 
+USING (auth.uid() = user_id);
+
+-- Budgets Policies
+CREATE POLICY "Users can view their own budgets" 
+ON budgets FOR SELECT 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own budgets" 
+ON budgets FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own budgets" 
+ON budgets FOR UPDATE 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own budgets" 
+ON budgets FOR DELETE 
+USING (auth.uid() = user_id);

@@ -13,7 +13,8 @@ export async function GET() {
     const { data, error } = await supabase
       .from('transaksi')
       .select('id, tanggal, deskripsi, tipe, jumlah, kategori, createdAt')
-      // RLS automatically filters by user_id = auth.uid()
+      .eq('user_id', user.id) // Explicit defense-in-depth filter
+      // RLS automatically filters by user_id = auth.uid() as well
       .order('tanggal', { ascending: false })
       .limit(200);
 
