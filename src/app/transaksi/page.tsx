@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTransactions, Transaksi } from '@/hooks/useTransactions';
-import { Loader2, Trash2, Edit2, Download, X } from 'lucide-react';
+import { Loader2, Trash2, Edit2, Download, X, Search, Filter } from 'lucide-react';
 import { useSettings } from '@/lib/SettingsContext';
 import { translations } from '@/lib/translations';
 // xlsx (~2MB) is intentionally NOT imported at the top.
@@ -13,7 +13,12 @@ export default function SemuaTransaksi() {
   const { language } = useSettings();
   const tr = translations[language];
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  
+
+  // Search & Filter State
+  const [search, setSearch] = useState('');
+  const [filterTipe, setFilterTipe] = useState('');
+  const [filterKategori, setFilterKategori] = useState('');
+
   // Modal State
   const [editingData, setEditingData] = useState<Transaksi | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -23,6 +28,20 @@ export default function SemuaTransaksi() {
   const formatRupiah = (angka: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
   };
+
+  // Filtered + searched data
+  const filteredData = useMemo(() => {
+    return data.filter(t => {
+      const matchesSearch =
+        !search ||
+        t.deskripsi.toLowerCase().includes(search.toLowerCase()) ||
+        t.kategori.toLowerCase().includes(search.toLowerCase()) ||
+        t.tanggal.includes(search);
+      const matchesTipe = !filterTipe || t.tipe === filterTipe;
+      const matchesKategori = !filterKategori || t.kategori === filterKategori;
+      return matchesSearch && matchesTipe && matchesKategori;
+    });
+  }, [data, search, filterTipe, filterKategori]);
 
   const handleDelete = async (id: string) => {
     if (confirm(tr.transactions.delete_confirm)) {
@@ -78,6 +97,14 @@ export default function SemuaTransaksi() {
     }
   };
 
+  const hasActiveFilters = search || filterTipe || filterKategori;
+
+  const clearFilters = () => {
+    setSearch('');
+    setFilterTipe('');
+    setFilterKategori('');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -108,6 +135,77 @@ export default function SemuaTransaksi() {
         </div>
       )}
 
+      {/* Search & Filter Bar */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          {/* Search */}
+          <div className="relative flex-1 min-w-0">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={tr.transactions.search}
+              className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            />
+          </div>
+
+          <div className="flex gap-3 flex-wrap sm:flex-nowrap">
+            {/* Filter by Tipe */}
+            <div className="relative">
+              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <select
+                value={filterTipe}
+                onChange={e => setFilterTipe(e.target.value)}
+                className="pl-8 pr-8 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+              >
+                <option value="">{tr.transactions.filter_type}</option>
+                <option value="Pemasukan">{tr.common.income}</option>
+                <option value="Pengeluaran">{tr.common.expense}</option>
+              </select>
+            </div>
+
+            {/* Filter by Kategori */}
+            <div className="relative">
+              <select
+                value={filterKategori}
+                onChange={e => setFilterKategori(e.target.value)}
+                className="px-3 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+              >
+                <option value="">{tr.transactions.filter_category}</option>
+                {KATEGORI.map(kat => (
+                  <option key={kat} value={kat}>
+                    {tr.common[kat.toLowerCase() as keyof typeof tr.common] || kat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Clear filters button */}
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-slate-200 dark:border-slate-600"
+                title="Reset filter"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Active filter summary */}
+        {hasActiveFilters && (
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            Menampilkan{' '}
+            <span className="font-semibold text-blue-600 dark:text-blue-400">{filteredData.length}</span>
+            {' '}dari{' '}
+            <span className="font-semibold">{data.length}</span>
+            {' '}transaksi
+          </p>
+        )}
+      </div>
+
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
@@ -122,7 +220,7 @@ export default function SemuaTransaksi() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {data.map((t) => (
+              {filteredData.map((t) => (
                 <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">{t.tanggal}</td>
                   <td className="px-6 py-4 font-medium text-slate-800 dark:text-white">{t.deskripsi}</td>
@@ -160,7 +258,7 @@ export default function SemuaTransaksi() {
                   </td>
                 </tr>
               ))}
-              {data.length === 0 && (
+              {filteredData.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
                     {tr.transactions.no_match}
