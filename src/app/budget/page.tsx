@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useBudgets, Budget } from '@/hooks/useBudgets';
+import { useBudgets } from '@/hooks/useBudgets';
 import { Save, Loader2, CheckCircle2 } from 'lucide-react';
 import { useSettings } from '@/lib/SettingsContext';
 import { translations } from '@/lib/translations';
@@ -14,24 +14,16 @@ export default function Pengaturan() {
   const [success, setSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
 
-  const KATEGORI = ['Makanan', 'Transportasi', 'Tagihan', 'Belanja', 'Gaji', 'Lainnya'];
-  
-  const [budgets, setBudgets] = useState<Record<string, string>>(
-    KATEGORI.reduce((acc, kat) => ({ ...acc, [kat]: '' }), {})
-  );
+  const [budget, setBudget] = useState<string>('');
 
   useEffect(() => {
-    if (data && data.length > 0) {
-      const newBudgets: Record<string, string> = { ...budgets };
-      data.forEach(b => {
-        newBudgets[b.kategori] = b.jumlah > 0 ? b.jumlah.toString() : '';
-      });
-      setBudgets(newBudgets);
+    if (data && data.jumlah > 0) {
+      setBudget(data.jumlah.toString());
     }
   }, [data]);
 
-  const handleChange = (kategori: string, value: string) => {
-    setBudgets(prev => ({ ...prev, [kategori]: value }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBudget(e.target.value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,12 +33,9 @@ export default function Pengaturan() {
     setSuccess(false);
 
     try {
-      const budgetData: Budget[] = Object.keys(budgets).map(kategori => ({
-        kategori,
-        jumlah: budgets[kategori] ? parseFloat(budgets[kategori]) : 0
-      }));
-
-      await saveBudgets(budgetData);
+      await saveBudgets({
+        jumlah: budget ? parseFloat(budget) : 0
+      });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
@@ -92,26 +81,21 @@ export default function Pengaturan() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {KATEGORI.map(kat => {
-            const label = t.common[kat.toLowerCase() as keyof typeof t.common] || kat;
-            return (
-              <div key={kat} className="space-y-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500 dark:text-slate-400">Rp</span>
-                  <input 
-                    type="number" 
-                    value={budgets[kat]}
-                    onChange={(e) => handleChange(kat, e.target.value)}
-                    placeholder="0"
-                    min="0"
-                    step="1000"
-                    className="w-full pl-12 pr-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                  />
-                </div>
-              </div>
-            );
-          })}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Total Anggaran Bulanan</label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500 dark:text-slate-400">Rp</span>
+              <input 
+                type="number" 
+                value={budget}
+                onChange={handleChange}
+                placeholder="0"
+                min="0"
+                step="1000"
+                className="w-full pl-12 pr-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              />
+            </div>
+          </div>
 
           <div className="pt-4">
             <button 

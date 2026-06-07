@@ -13,14 +13,15 @@ export async function GET(request: Request) {
     const { data, error } = await supabase
       .from('budgets')
       .select('*')
-      .eq('user_id', user.id); // Explicit defense-in-depth filter
+      .eq('user_id', user.id)
+      .maybeSingle();
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: data || { jumlah: 0 } });
   } catch (error: any) {
     console.error('API GET Budgets Error:', error);
-    return NextResponse.json({ success: false, message: error.message, data: [] }, { status: 500 });
+    return NextResponse.json({ success: false, message: error.message, data: { jumlah: 0 } }, { status: 500 });
   }
 }
 
@@ -34,29 +35,19 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json(); 
-    if (!Array.isArray(body)) {
-       return NextResponse.json({ success: false, message: 'Invalid payload' }, { status: 400 });
+    if (typeof body.jumlah !== 'number') {
+       return NextResponse.json({ success: false, message: 'Invalid payload: missing jumlah' }, { status: 400 });
     }
 
-    // Best effort per-user update. Note: if kategori is the primary key globally,
-    // this may require database schema adjustments to (kategori, user_id).
-    // For now, we will delete existing budgets for the user and insert new ones to avoid onConflict issues.
-    
-    // 1. Delete all current budgets for this user
-    await supabase.from('budgets').delete().eq('user_id', user.id);
+    // Upsert a single budget configuration per user
+    const { error } = await supabase
+      .from('budgets')
+      .upsert({
+        user_id: user.id,
+        jumlah: body.jumlah
+      }, { onConflict: 'user_id' });
 
-    // 2. Insert new budgets
-    if (body.length > 0) {
-      const { error } = await supabase
-        .from('budgets')
-        .insert(body.map((item: any) => ({
-          kategori: item.kategori,
-          jumlah: item.jumlah,
-          user_id: user.id
-        })));
-
-      if (error) throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({ success: true, message: 'Budgets berhasil diperbarui' });
   } catch (error: any) {

@@ -206,42 +206,43 @@ export default function Dashboard() {
         <div className="space-y-6">
 
           {/* Budget Progress */}
-          {budgets && budgets.length > 0 && budgets.some(b => b.jumlah > 0) && (
+          {budgets && budgets.jumlah > 0 && (
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
               <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                 {t.budget.title}
               </h3>
               <div className="space-y-5">
-                {budgets.filter(b => b.jumlah > 0).map(b => {
-                  const spent = categoryExpenses[b.kategori] || 0;
+                {(() => {
+                  const b = budgets;
+                  const spent = totalPengeluaran; // Use total expenses against total budget
                   const percentage = Math.min(100, Math.round((spent / b.jumlah) * 100));
                   const isExceeded = spent > b.jumlah;
                   const isWarning = percentage >= 80 && !isExceeded;
 
                   return (
-                    <div key={b.kategori}>
+                    <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="font-medium text-slate-700">{b.kategori}</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-300">Total Pengeluaran</span>
                         <span className={`font-semibold ${isExceeded ? 'text-red-600' : isWarning ? 'text-yellow-600' : 'text-slate-500'}`}>
                           {formatRupiah(spent)} / {formatRupiah(b.jumlah)}
                         </span>
                       </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
                         <div
                           className={`h-2.5 rounded-full transition-all duration-500 ${isExceeded ? 'bg-red-500' : isWarning ? 'bg-yellow-400' : 'bg-green-500'}`}
                           style={{ width: `${percentage}%` }}
                         ></div>
                       </div>
                       {isExceeded ? (
-                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={12} /> Melebihi budget!</p>
+                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={12} /> Melebihi budget bulanan!</p>
                       ) : isWarning ? (
-                        <p className="text-xs text-yellow-600 mt-1 flex items-center gap-1"><AlertCircle size={12} /> Mendekati batas budget.</p>
+                        <p className="text-xs text-yellow-600 mt-1 flex items-center gap-1"><AlertCircle size={12} /> Mendekati batas budget bulanan.</p>
                       ) : (
-                        <p className="text-xs text-green-600 mt-1 flex items-center gap-1"><CheckCircle size={12} /> Budget aman.</p>
+                        <p className="text-xs text-green-600 mt-1 flex items-center gap-1"><CheckCircle size={12} /> Budget bulanan aman.</p>
                       )}
                     </div>
                   );
-                })}
+                })()}
               </div>
             </div>
           )}

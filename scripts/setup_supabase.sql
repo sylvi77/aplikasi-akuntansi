@@ -6,8 +6,8 @@
 -- 1. Tambahkan kolom user_id jika belum ada
 ALTER TABLE transaksi ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
--- Karena tabel budgets memiliki kategori sebagai PRIMARY KEY sebelumnya,
--- kita harus ubah agar PRIMARY KEY adalah kombinasi (kategori, user_id).
+-- Karena tabel budgets sekarang hanya memiliki satu konfigurasi per user,
+-- kita atur user_id sebagai PRIMARY KEY.
 ALTER TABLE budgets ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
 -- [PERBAIKAN ERROR] Hapus data lama yang tidak memiliki user_id (NULL)
@@ -15,7 +15,7 @@ ALTER TABLE budgets ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(
 DELETE FROM transaksi WHERE user_id IS NULL;
 DELETE FROM budgets WHERE user_id IS NULL;
 
--- Hapus PRIMARY KEY lama pada budgets jika ada, lalu buat kombinasi PK baru
+-- Hapus PRIMARY KEY lama pada budgets jika ada, lalu buat PK baru berdasarkan user_id
 DO $$
 BEGIN
   BEGIN
@@ -25,7 +25,7 @@ BEGIN
   END;
   
   BEGIN
-    ALTER TABLE budgets ADD PRIMARY KEY (kategori, user_id);
+    ALTER TABLE budgets ADD PRIMARY KEY (user_id);
   EXCEPTION
     WHEN invalid_table_definition THEN null;
   END;

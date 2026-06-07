@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export type Budget = {
-  kategori: string;
+  user_id?: string;
   jumlah: number;
   updatedAt?: string;
 };
 
 export function useBudgets() {
-  const [data, setData] = useState<Budget[]>([]);
+  const [data, setData] = useState<Budget | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,11 +34,11 @@ export function useBudgets() {
     fetchBudgets();
   }, [fetchBudgets]);
 
-  const saveBudgets = async (budgets: Budget[]) => {
+  const saveBudgets = async (budget: { jumlah: number }) => {
     const res = await fetch('/api/budgets', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(budgets),
+      body: JSON.stringify(budget),
     });
     const json = await res.json();
     if (json.success) {
